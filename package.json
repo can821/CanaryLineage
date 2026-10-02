@@ -1,0 +1,26 @@
+{
+  "name": "canary-lineage",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Runtime synthetic-data lineage and destination comparison for explicitly instrumented Node.js applications.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.9.0"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --env-file-if-exists=.env --watch src/server.js",
+    "demo": "node src/server.js --demo",
+    "db:init": "node --env-file-if-exists=.env scripts/init-db.js",
+    "test": "node --test test/*.test.js",
+    "verify:postgres": "node --env-file-if-exists=.env scripts/verify-postgres-local.js",
+    "test:postgres": "node --env-file-if-exists=.env --test test/integration/*.test.js",
+    "check": "node scripts/check.js",
+    "verify": "npm run check && npm test"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pg": "^8.16.0"
+  },
+  "license": "MIT"
+}

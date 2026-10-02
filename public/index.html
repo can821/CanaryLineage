@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CanaryLineage · Trace console</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" type="module"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="CanaryLineage ana sayfa"><span class="brand-mark">C</span>CanaryLineage<span class="version">v0.1</span></a>
+    <div class="environment"><span class="dot"></span><span id="mode">Bağlanıyor</span><span class="local-label">LOCAL</span></div>
+  </header>
+  <main>
+    <div class="page-heading"><div><p class="eyebrow">DEVELOPER TOOLS / LINEAGE</p><h1>Trace console</h1></div><p>Sentetik verinin giriş, işleme, depolama<br>ve HTTP çıkış noktalarını incele.</p></div>
+    <div class="workspace">
+      <aside class="controls">
+        <section class="panel">
+          <div class="panel-heading"><h2>Yeni trace</h2><span class="section-no">01</span></div>
+          <form id="signup">
+            <label for="email">Sentetik canary</label>
+            <input id="email" name="email" type="email" readonly required aria-describedby="email-help">
+            <p id="email-help" class="hint">UUID ile üretilir. Gerçek bir e-posta adresi değildir.</p>
+            <button id="generate" type="button" class="text-button">↻ Yeni değer üret</button>
+            <label for="scenario">Senaryo</label>
+            <select id="scenario">
+              <option value="http">Depolama + HTTP çıkışı</option>
+              <option value="storage">Yalnızca depolama</option>
+              <option value="http-failure">HTTP hata senaryosu</option>
+            </select>
+            <p class="hint">HTTP hedefi aynı makinedeki mock servistir. E-posta gönderilmez.</p>
+            <button id="send" type="submit" class="primary" disabled>Trace çalıştır <span aria-hidden="true">→</span></button>
+          </form>
+          <p id="message" class="message" role="status" aria-live="polite">Bağlantı kontrol ediliyor.</p>
+        </section>
+        <section class="panel environment-panel"><div class="panel-heading"><h2>Çalışma ortamı</h2><span class="section-no">02</span></div><p id="storage">Depolama kontrol ediliyor…</p><p class="hint">Sadece seçilen sınırlar gözlemlenir. Tam taint analysis yapılmaz.</p></section>
+      </aside>
+      <section class="panel trace-panel" aria-labelledby="trace-heading">
+        <div class="panel-heading"><h2 id="trace-heading">Veri akışı</h2><span id="trace-state" class="badge">BEKLENİYOR</span></div>
+        <div id="empty" class="empty"><span class="empty-symbol" aria-hidden="true">↳</span><h3>Henüz trace yok</h3><p>Sentetik veriyi demo uygulamasından geçir.<br>Gözlemlenen sınırlar burada görünecek.</p></div>
+        <div id="result" hidden>
+          <div class="trace-meta"><div><span class="label">TRACE ID</span><code id="trace-id"></code></div><span id="duration" class="duration"></span></div>
+          <div class="value-row"><span class="label">İZLENEN DEĞER</span><code id="trace-value"></code></div>
+          <p class="flow-note">Bağlantılar çağrı ilişkisini gösterir. Kardeş sınırlar sırayla çalışır; paralellik anlamına gelmez.</p>
+          <div id="events" class="flow" aria-label="Trace olay ağacı"></div>
+          <p id="boundary-note" class="boundary-note"></p>
+          <div class="trace-actions"><button id="reload" type="button" class="secondary">Depolamadan yeniden oku</button><span id="event-count" class="hint"></span></div>
+          <details class="raw"><summary>Ham trace / JSON</summary><pre id="json"></pre></details>
+        </div>
+      </section>
+    </div>
+    <section class="panel compare-panel" aria-labelledby="compare-heading">
+      <div class="panel-heading"><h2 id="compare-heading">Trace karşılaştır</h2><span class="section-no">03 / DESTINATIONS</span></div>
+      <form id="compare-form">
+        <div class="compare-inputs">
+          <div><label for="baseline">Baseline · önceki trace ID</label><input id="baseline" required list="known-traces" placeholder="Trace UUID" autocomplete="off"><button id="use-baseline" class="text-button" type="button">Görünen trace'i baseline yap</button></div>
+          <div><label for="comparison-current">Current · sonraki trace ID</label><input id="comparison-current" required list="known-traces" placeholder="Trace UUID" autocomplete="off"><button id="use-current" class="text-button" type="button">Görünen trace'i current yap</button></div>
+        </div>
+        <datalist id="known-traces"></datalist>
+        <button id="compare-submit" class="secondary" type="submit">Hedefleri karşılaştır</button>
+      </form>
+      <p id="compare-message" class="message" role="status" aria-live="polite">Önce yalnızca depolama, ardından yeni bir canary ile depolama + HTTP trace'i çalıştır. Kaydedilen ilk iki trace otomatik seçilir.</p>
+      <div id="comparison-result" hidden></div>
+      <p class="comparison-note">Gözlemlenen veya denenmiş hedefler karşılaştırılır; teslimat ya da gizlilik ihlali kanıtı değildir. Eksik hedef, başarısız veya tamamlanmamış bir çalışmadan kaynaklanabilir. Depolama eşleşmesi mantıksal tablo/sütun üzerinden yapılır.</p>
+    </section>
+    <footer><span>EXPLICIT INSTRUMENTATION · ASYNC CONTEXT</span><span>Browser olayı istemci beyanıdır. Instrument edilmeyen akışlar görünmez.</span></footer>
+  </main>
+</body>
+</html>
