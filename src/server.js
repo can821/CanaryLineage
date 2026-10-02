@@ -10,16 +10,16 @@ const port = Number(process.env.PORT ?? 3000);
 let pool;
 let mock;
 try {
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT 1–65535 arasında olmalı.');
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be between 1 and 65535.');
   pool = demo ? null : createPool(process.env.DATABASE_URL);
   const repository = demo ? memoryRepository() : postgresRepository(pool);
   mock = await startMockServer();
   const server = createApp({ repository, sendEmail: createMockEmailClient(mock.url) }).listen(port, '127.0.0.1', () => {
     console.log(`CanaryLineage: http://127.0.0.1:${port} [${repository.mode}]`);
-    if (demo) console.log('DEMO: PostgreSQL kullanılmıyor. Kayıtlar yeniden başlatınca silinir.');
+    if (demo) console.log('DEMO: PostgreSQL is not in use. Records are cleared on restart.');
   });
   server.on('error', async () => {
-    console.error('Sunucu açılamadı. Port kullanımda olabilir. PORT değerini kontrol et.');
+    console.error('Could not start the server. The port may be in use. Check PORT.');
     await pool?.end();
     await mock?.close();
     process.exitCode = 1;

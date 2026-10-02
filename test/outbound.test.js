@@ -29,7 +29,7 @@ test('actual loopback HTTP produces sibling storage/output events and retrievabl
   assert.equal(output.status, 'success');
   assert.equal(output.metadata.httpStatus, 204);
   assert.equal(output.value, trace.canary);
-  assert.match(readable, /├─ Bellek/);
+  assert.match(readable, /├─ Memory/);
   assert.match(readable, /└─ POST mock-email-service/);
   assert.deepEqual((await (await http.get(`/api/traces/${trace.id}`)).json()).trace, trace);
 });

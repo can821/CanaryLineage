@@ -11,8 +11,8 @@ export function memoryRepository({ limit = 500 } = {}) {
     async health() {},
     async saveUser(email) {
       const trace = currentTrace();
-      if (emails.has(email)) throw new AppError(409, 'CANARY_EXISTS', 'Bu canary zaten kaydedildi. Yeni bir canary üret.');
-      if (traces.size >= limit) throw new AppError(503, 'DEMO_FULL', 'Demo doldu. Belleği temizlemek için sunucuyu yeniden başlat.');
+      if (emails.has(email)) throw new AppError(409, 'CANARY_EXISTS', 'This canary is already stored. Generate a new canary.');
+      if (traces.size >= limit) throw new AppError(503, 'DEMO_FULL', 'Demo capacity reached. Restart the server to clear memory.');
       const user = { id: randomUUID(), email, created_at: new Date().toISOString() };
       const event = observeWrite('memory-demo', user.email);
       event.status = 'success';

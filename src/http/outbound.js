@@ -30,7 +30,7 @@ async function tracedPost(url, email, { timeoutMs }) {
   } catch (error) {
     event.status = 'failed';
     event.metadata.failure = error.name === 'TimeoutError' ? 'timeout' : event.metadata.httpStatus ? 'http-status' : 'network';
-    throw new AppError(502, 'HTTP_OUTPUT_FAILED', 'Yerel HTTP servisi isteği tamamlayamadı. Önceki depolama kaydı korunur.');
+    throw new AppError(502, 'HTTP_OUTPUT_FAILED', 'The local HTTP service could not complete the request. The earlier storage write is preserved.');
   } finally {
     event.metadata.durationMs = Math.round((performance.now() - started) * 100) / 100;
   }

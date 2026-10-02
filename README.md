@@ -4,7 +4,7 @@
 
 CanaryLineage is a local developer tool that follows a controlled synthetic value through selected Express, service, PostgreSQL and outbound HTTP boundaries. It answers a practical debugging question: **which observed destinations did this test value reach, and what changed between two executions?**
 
-Built by **Can Yılmaz** as a portfolio project while developing Node.js/Express and software engineering skills.
+Built by **Can Yılmaz**.
 
 [Portfolio](https://can-yilmaz.netlify.app/) · [LinkedIn](https://www.linkedin.com/in/can-yilmaz-200594381) · [Architecture](docs/ARCHITECTURE.md) · [Verification record](docs/VERIFICATION.md)
 
@@ -36,13 +36,13 @@ npm ci
 npm run demo
 ```
 
-Open **http://127.0.0.1:3000**. Select a scenario, then **Trace çalıştır**:
+Open **http://127.0.0.1:3000**. Select a scenario, then **Run trace**:
 
-- **Depolama + HTTP çıkışı:** store the synthetic email, then send it to a local mock endpoint.
-- **Yalnızca depolama:** no outgoing request for this trace.
-- **HTTP hata senaryosu:** storage succeeds; the local mock returns 503. The response is 502 with a failed trace, retaining the successful storage event.
+- **Storage + HTTP:** store the synthetic email, then send it to a local mock endpoint.
+- **Storage only:** no outgoing request for this trace.
+- **HTTP failure:** storage succeeds; the local mock returns 503. The response is 502 with a failed trace, retaining the successful storage event.
 
-Each run needs a new canary; use **Yeni değer üret**. Duplicate email returns 409. Click event cards for metadata. **Depolamadan yeniden oku** retrieves the saved trace. Raw JSON is expandable.
+Each run needs a new canary; use **Generate new canary**. Duplicate email returns 409. Click event cards for metadata. **Reload from storage** retrieves the saved trace. Raw JSON is expandable.
 
 The mock service starts automatically on an ephemeral loopback port in the same Node process. It sends no email, retains no payload, and uses no third-party API. `Ctrl+C` stops both listeners. If port 3000 is occupied: `PORT=3003 npm run demo`.
 
@@ -64,10 +64,10 @@ The storage and HTTP events share a service parent. They execute **sequentially*
 
 ## Compare destinations
 
-In **Trace karşılaştır**, use two saved trace IDs. The first two saved traces populate the fields automatically; buttons let you use the currently displayed trace, and the inputs suggest traces seen in this browser session. Older stored IDs can be pasted manually.
+In **Compare traces**, use two saved trace IDs. The first two saved traces populate the fields automatically; buttons let you use the currently displayed trace, and the inputs suggest traces seen in this browser session. Older stored IDs can be pasted manually.
 
-1. Run **Yalnızca depolama** and use it as baseline.
-2. Generate a new canary and run **Depolama + HTTP çıkışı** as current.
+1. Run **Storage only** and use it as baseline.
+2. Generate a new canary and run **Storage + HTTP** as current.
 3. Compare: `HTTP_OUTPUT → mock-email-service` is added; `users.email` is unchanged.
 4. Swap IDs: the HTTP destination is removed. Two storage-only runs have no destination changes.
 
@@ -166,7 +166,7 @@ db/schema.sql                 Tables (users + lineage_traces)
 test/                         Behavioral tests and PostgreSQL integration
 ```
 
-[Architecture](docs/ARCHITECTURE.md) · [Türkçe öğrenme notları](docs/LEARNING.md) · [Verification record](docs/VERIFICATION.md)
+[Architecture](docs/ARCHITECTURE.md) · [Development notes (Turkish)](docs/LEARNING.md) · [Verification record](docs/VERIFICATION.md)
 
 ## Limitations
 

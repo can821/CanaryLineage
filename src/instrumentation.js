@@ -66,7 +66,7 @@ export function observeWrite(storage, value) {
   const postgres = storage === 'postgres';
   return observe({
     stage: postgres ? 'database' : 'demo-store',
-    location: postgres ? 'PostgreSQL: users.email' : 'Bellek: users.email (PostgreSQL değil)',
+    location: postgres ? 'PostgreSQL: users.email' : 'Memory: users.email (not PostgreSQL)',
     value, status: 'pending', evidence: postgres ? 'server-observed' : 'demo-only',
     metadata: { table: 'users', column: 'email', operation: 'INSERT', persistence: postgres ? 'transaction' : 'volatile' },
   });

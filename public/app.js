@@ -8,7 +8,7 @@ const knownTraces = new Map();
 function setBusy(value) {
   busy = value;
   for (const id of ['send', 'generate', 'scenario', 'reload']) $(id).disabled = value;
-  $('send').textContent = value ? 'İzleniyor…' : 'Trace çalıştır →';
+  $('send').textContent = value ? 'Tracing…' : 'Run trace →';
   form.setAttribute('aria-busy', String(value));
 }
 function message(text, error = false) {
@@ -17,7 +17,7 @@ function message(text, error = false) {
 }
 function newCanary() {
   $('email').value = `canary+${crypto.randomUUID()}@example.test`;
-  message('Yeni sentetik değer hazır.');
+  message('New synthetic canary ready.');
 }
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -48,7 +48,7 @@ function renderTree(trace) {
       const top = element('span', 'event-top');
       top.append(element('span', 'event-type', event.type), element('span', 'event-status', statusLabels[event.status] ?? event.status));
       card.append(top, element('span', 'event-title', event.location));
-      const time = new Date(event.occurredAt).toLocaleTimeString('tr-TR', { hour12: false });
+      const time = new Date(event.occurredAt).toLocaleTimeString('en-GB', { hour12: false });
       card.append(element('span', 'event-time', `${String(event.sequence).padStart(2, '0')} · ${time} · ${event.evidence}`));
       const details = element('div', 'event-detail');
       details.hidden = true;
@@ -56,7 +56,7 @@ function renderTree(trace) {
       card.setAttribute('aria-controls', details.id);
       card.setAttribute('aria-expanded', 'false');
       const parentEvent = trace.events.find(candidate => candidate.id === event.parentId);
-      details.append(element('h3', '', 'Olay ayrıntıları'));
+      details.append(element('h3', '', 'Event details'));
       const dl = element('dl');
       for (const [key, value] of Object.entries({ eventId: event.id, parent: parentEvent?.location ?? 'request source', timestamp: event.occurredAt, ...event.metadata })) {
         dl.append(element('dt', '', key), element('dd', '', typeof value === 'object' ? JSON.stringify(value) : String(value)));
@@ -70,7 +70,7 @@ function renderTree(trace) {
       node.append(card, details);
       const children = byParent.get(event.id) ?? [];
       if (children.length) {
-        if (children.length > 1) node.append(element('span', 'branch-label', `${children.length} BAĞLI SINIR · AYNI PARENT`));
+        if (children.length > 1) node.append(element('span', 'branch-label', `${children.length} CHILD BOUNDARIES · SAME PARENT`));
         const childList = element('ol', children.length > 1 ? 'children branch' : 'children');
         append(event.id, childList);
         node.append(childList);
@@ -88,7 +88,7 @@ function renderTrace(trace, saved) {
     knownTraces.set(trace.id, trace);
     $('known-traces').replaceChildren(...[...knownTraces.values()].map(item => {
       const option = element('option'); option.value = item.id;
-      option.label = `${item.status} · ${item.events.some(e => e.type === 'HTTP_OUTPUT') ? 'Depolama + HTTP' : 'Depolama'}`;
+      option.label = `${item.status} · ${item.events.some(e => e.type === 'HTTP_OUTPUT') ? 'Storage + HTTP' : 'Storage'}`;
       return option;
     }));
     if (!$('baseline').value) $('baseline').value = trace.id;
@@ -102,19 +102,19 @@ function renderTrace(trace, saved) {
   $('trace-value').textContent = trace.canary;
   const start = Date.parse(trace.startedAt);
   const end = Date.parse(trace.finishedAt);
-  $('duration').textContent = Number.isFinite(end - start) ? `${Math.max(0, end - start)} ms` : 'Tamamlanmadı';
+  $('duration').textContent = Number.isFinite(end - start) ? `${Math.max(0, end - start)} ms` : 'Incomplete';
   $('json').textContent = JSON.stringify(trace, null, 2);
-  $('event-count').textContent = `${trace.events.length} gözlem`;
+  $('event-count').textContent = `${trace.events.length} observations`;
   const output = trace.events.find(event => event.type === 'HTTP_OUTPUT');
-  const boundary = output ? `HTTP çıkışı: ${output.status === 'success' ? 'yerel mock servisi kabul etti' : 'başarısız; hedefin veriyi almadığı garanti edilemez'}.` : 'Bu çalışmada HTTP çıkışı çağrılmadı.';
-  $('boundary-note').textContent = `${boundary} ${saved ? trace.storage === 'postgres' ? 'Trace PostgreSQL’den tekrar okunabilir.' : 'Trace geçici demo belleğinden tekrar okunabilir.' : 'Son trace yalnızca bu yanıtta; depolamaya yazıldığı doğrulanmadı.'}`;
+  const boundary = output ? `Outbound HTTP: ${output.status === 'success' ? 'accepted by the local mock service' : 'failed; delivery to the destination cannot be ruled out'}.` : 'No outbound HTTP call in this execution.';
+  $('boundary-note').textContent = `${boundary} ${saved ? trace.storage === 'postgres' ? 'The trace can be reloaded from PostgreSQL.' : 'The trace can be reloaded from temporary demo memory.' : 'The final trace is available only in this response; persistence was not confirmed.'}`;
   $('reload').hidden = !saved;
   renderTree(trace);
 }
 async function readResponse(response) {
   const body = await response.json();
   if (!response.ok) {
-    const error = new Error(body.error?.message ?? body.error ?? 'İstek tamamlanamadı.');
+    const error = new Error(body.error?.message ?? body.error ?? 'The request could not be completed.');
     error.trace = body.trace;
     error.traceSaved = body.traceSaved;
     throw error;
@@ -125,13 +125,13 @@ form.addEventListener('submit', async event => {
   event.preventDefault();
   if (busy) return;
   setBusy(true);
-  message('İstek uygulamadan geçiriliyor.');
+  message('Processing the request.');
   $('trace-state').textContent = 'RUNNING';
   $('trace-state').dataset.status = 'pending';
   $('result').hidden = true;
   $('empty').hidden = false;
-  $('empty').querySelector('h3').textContent = 'Trace çalışıyor';
-  $('empty').querySelector('p').textContent = 'Seçilen sınırların yanıtı bekleniyor…';
+  $('empty').querySelector('h3').textContent = 'Trace in progress';
+  $('empty').querySelector('p').textContent = 'Waiting for the selected boundaries…';
   try {
     const value = $('email').value;
     const result = await readResponse(await fetch('/api/signup', {
@@ -139,14 +139,14 @@ form.addEventListener('submit', async event => {
       body: JSON.stringify({ email: value, scenario: $('scenario').value, browserEvent: { value, occurredAt: new Date().toISOString() } }),
     }));
     renderTrace(result.trace, result.traceSaved);
-    message('Trace tamamlandı. Ayrıntılar için bir olaya tıkla.');
+    message('Trace complete. Select an event to inspect its details.');
   } catch (error) {
     if (error.trace) renderTrace(error.trace, error.traceSaved);
     else {
       $('trace-state').textContent = 'FAILED';
       $('trace-state').dataset.status = 'failed';
-      $('empty').querySelector('h3').textContent = 'Trace oluşturulamadı';
-      $('empty').querySelector('p').textContent = 'Sunucu bağlantısını ve isteği kontrol et.';
+      $('empty').querySelector('h3').textContent = 'Could not create trace';
+      $('empty').querySelector('p').textContent = 'Check the server connection and request.';
     }
     message(error.message, true);
   } finally { setBusy(false); }
@@ -158,7 +158,7 @@ $('reload').addEventListener('click', async () => {
   try {
     const result = await readResponse(await fetch(`/api/traces/${current.id}`));
     renderTrace(result.trace, true);
-    message('Trace depolamadan yeniden okundu.');
+    message('Trace reloaded from storage.');
   } catch (error) { message(error.message, true); }
   finally { setBusy(false); }
 });
@@ -166,29 +166,29 @@ newCanary();
 try {
   const health = await readResponse(await fetch('/api/health'));
   $('mode').textContent = health.storage;
-  $('storage').textContent = health.storage === 'postgres' ? 'PostgreSQL bağlı. Gerçek veritabanı yazımı kullanılır.' : 'MEMORY DEMO — PostgreSQL kullanılmıyor. Veriler sunucu kapanınca silinir.';
+  $('storage').textContent = health.storage === 'postgres' ? 'PostgreSQL connected. Writes use the real database.' : 'MEMORY DEMO — PostgreSQL is not in use. Data is lost when the server stops.';
   if (!health.outbound) {
     $('scenario').value = 'storage';
     for (const option of $('scenario').options) option.disabled = option.value !== 'storage';
   }
   $('send').disabled = false;
-  message('Çalıştırmaya hazır.');
+  message('Ready to run.');
 } catch (error) {
   $('mode').textContent = 'unavailable';
-  $('storage').textContent = 'Bağlantı hazır değil. Ayarları düzelttikten sonra sayfayı yenile.';
+  $('storage').textContent = 'Connection unavailable. Check the configuration, then reload the page.';
   message(error.message, true);
 }
 
 for (const [button, field] of [['use-baseline', 'baseline'], ['use-current', 'comparison-current']]) {
   $(button).addEventListener('click', () => {
     if (busy || !current || !currentSaved) {
-      $('compare-message').textContent = 'Önce kaydedilmiş bir trace çalıştır veya yeniden oku.';
+      $('compare-message').textContent = 'Run or reload a saved trace first.';
       return;
     }
     comparisonRequest++;
     $(field).value = current.id;
     $('comparison-result').hidden = true;
-    $('compare-message').textContent = 'Seçim güncellendi. Hedefleri karşılaştır düğmesine bas.';
+    $('compare-message').textContent = 'Selection updated. Select Compare destinations.';
   });
 }
 let comparisonRequest = 0;
@@ -196,7 +196,7 @@ for (const field of ['baseline', 'comparison-current']) {
   $(field).addEventListener('input', () => {
     comparisonRequest++;
     $('comparison-result').hidden = true;
-    $('compare-message').textContent = 'Seçim değişti. Karşılaştırmayı yeniden çalıştır.';
+    $('compare-message').textContent = 'Selection changed. Run the comparison again.';
   });
 }
 $('compare-form').addEventListener('submit', async event => {
@@ -207,27 +207,27 @@ $('compare-form').addEventListener('submit', async event => {
   $('compare-submit').disabled = true;
   $('comparison-result').hidden = true;
   $('compare-message').dataset.error = 'false';
-  $('compare-message').textContent = 'Kaydedilmiş hedefler karşılaştırılıyor…';
+  $('compare-message').textContent = 'Comparing saved destinations…';
   try {
     const query = new URLSearchParams({ baseline, current: currentId });
     const result = await readResponse(await fetch(`/api/compare?${query}`));
     if (request !== comparisonRequest) return;
     const groups = [];
-    for (const [key, title, className] of [['addedSinks', 'EKLENEN', 'added'], ['removedSinks', 'ÇIKAN', 'removed'], ['unchangedSinks', 'AYNI KALAN', 'unchanged']]) {
+    for (const [key, title, className] of [['addedSinks', 'ADDED', 'added'], ['removedSinks', 'REMOVED', 'removed'], ['unchangedSinks', 'UNCHANGED', 'unchanged']]) {
       const group = element('section', `sink-group ${className}`);
       group.append(element('h3', '', `${title} · ${result[key].length}`));
       for (const sink of result[key]) {
         group.append(element('p', 'sink-name', `${sink.type} → ${sink.destination}`));
         group.append(element('p', 'hint', [sink.operation, sink.path].filter(Boolean).join(' ')));
       }
-      if (!result[key].length) group.append(element('p', 'hint', 'Yok'));
+      if (!result[key].length) group.append(element('p', 'hint', 'None'));
       groups.push(group);
     }
     const identity = element('p', 'comparison-context', `Baseline: ${result.baselineTraceId} (${result.baselineStorage}, ${result.baselineStatus}) → Current: ${result.currentTraceId} (${result.currentStorage}, ${result.currentStatus})`);
     const grid = element('div', 'sink-grid'); grid.append(...groups);
     $('comparison-result').replaceChildren(identity, grid);
     $('comparison-result').hidden = false;
-    $('compare-message').textContent = result.addedSinks.length ? `${result.addedSinks.length} yeni hedef gözlemlendi.` : result.removedSinks.length ? `${result.removedSinks.length} hedef bu trace'te gözlemlenmedi.` : 'Gözlemlenen hedef kümesi aynı.';
+    $('compare-message').textContent = result.addedSinks.length ? `New destinations observed: ${result.addedSinks.length}.` : result.removedSinks.length ? `Destinations not observed in this trace: ${result.removedSinks.length}.` : 'The observed destination sets are identical.';
   } catch (error) {
     if (request !== comparisonRequest) return;
     $('compare-message').textContent = error.message;

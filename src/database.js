@@ -2,7 +2,7 @@ import pg from 'pg';
 import { readFile } from 'node:fs/promises';
 
 export function createPool(connectionString) {
-  if (!connectionString) throw new Error('DATABASE_URL eksik. .env dosyasını hazırla veya npm run demo kullan.');
+  if (!connectionString) throw new Error('DATABASE_URL is missing. Configure .env or use npm run demo.');
   const pool = new pg.Pool({
     connectionString,
     max: 5,
@@ -11,7 +11,7 @@ export function createPool(connectionString) {
     statement_timeout: 5000,
   });
   // Never print a connection string or database error detail (it may contain data).
-  pool.on('error', () => console.error('PostgreSQL bağlantısı kesildi; bir sonraki istekte yeniden denenecek.'));
+  pool.on('error', () => console.error('PostgreSQL connection lost; the next request will attempt to reconnect.'));
   return pool;
 }
 
