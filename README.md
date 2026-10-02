@@ -29,9 +29,9 @@ For a short review, run the [demo](#quick-start), try the [destination compariso
 
 Requires **Node.js 24 LTS + npm** (minimum 22.9). Install from [nodejs.org](https://nodejs.org/en/download) if `node -v` / `npm -v` are unavailable.
 
-From the project directory:
-
 ```sh
+git clone https://github.com/can821/CanaryLineage.git
+cd CanaryLineage
 npm ci
 npm run demo
 ```
@@ -145,7 +145,7 @@ npm run test:postgres   # Real PostgreSQL integration, separate prerequisite
 npm run dev            # PostgreSQL mode; restart on source changes
 ```
 
-Tests exercise overlapping async requests, parent relationships, value isolation, real loopback HTTP, failure, timeout, finalization failure, SQL parameterization and rollback. The GitHub Actions workflow provisions PostgreSQL 17 and runs both groups after publication. Remote CI has not yet run.
+Tests exercise overlapping async requests, parent relationships, value isolation, real loopback HTTP, failure, timeout, finalization failure, SQL parameterization and rollback. The GitHub Actions workflow provisions PostgreSQL 17 and runs both groups after publication. [GitHub Actions passed on 2 October 2026](https://github.com/can821/CanaryLineage/actions/runs/36989343482), including both `npm run verify` and the real PostgreSQL integration test.
 
 **PostgreSQL verification:** on 1 October 2026 the project owner reported a successful real `verify:postgres` run in normal macOS Terminal, including connection, schema, INSERT, HTTP, transactions and retrieval after the writer process exited. Work's sandbox could not start PostgreSQL and did not perform that successful run. See the [verification record](docs/VERIFICATION.md) for the evidence and its provenance.
 
