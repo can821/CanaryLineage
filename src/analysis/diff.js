@@ -20,6 +20,8 @@ export function compareGraphs(baseline,current,{includeStatus=false}={}){
   const accesses=delta(db(before),db(after));if(accesses.added.length||accesses.removed.length)changes.push({type:'DB_ACCESS_CHANGED',evidence:accesses});
   const hops=g=>g.facts.filter(f=>f.type==='HTTP_OUTPUT').map(f=>({source:f.service,target:f.targetService??f.destination.name}));
   compare(hops(before),hops(after),'NEW_HTTP_HOP','REMOVED_HTTP_HOP');
+  const queueHops=g=>g.facts.filter(f=>f.type==='QUEUE_PRODUCER').map(f=>({source:f.service,target:f.targetService??f.destination.name}));
+  compare(queueHops(before),queueHops(after),'NEW_QUEUE_HOP','REMOVED_QUEUE_HOP');
   const perCanary=g=>sinks(g).map(f=>({label:f.label,destination:f.destination}));const canaries=delta(perCanary(before),perCanary(after));
   if(canaries.added.length||canaries.removed.length)changes.push({type:'CANARY_DESTINATION_CHANGED',evidence:canaries});
   return {schemaVersion:1,baselineTraceId:before.traceId,currentTraceId:after.traceId,complete:before.complete&&after.complete,changes:sorted(changes)};

@@ -1,5 +1,5 @@
 const string = (v, max=256) => typeof v==='string' && v.length>0 && v.length<=max;
-const types = new Set(['BROWSER_INPUT','HTTP_INPUT','FUNCTION','TRANSFORMATION','DATABASE_READ','DATABASE_WRITE','DEMO_WRITE','HTTP_OUTPUT','ERROR']);
+const types = new Set(['BROWSER_INPUT','HTTP_INPUT','FUNCTION','TRANSFORMATION','DATABASE_READ','DATABASE_WRITE','DEMO_WRITE','HTTP_OUTPUT','QUEUE_PRODUCER','QUEUE_CONSUMER','ERROR']);
 const ordered = values => [...values].sort((a,b)=>JSON.stringify(a)<JSON.stringify(b)?-1:JSON.stringify(a)>JSON.stringify(b)?1:0);
 const fail = () => { throw new Error('Invalid or unsupported trace graph'); };
 
@@ -56,12 +56,12 @@ export function buildGraph(input) {
     const result=[...(e.parentId?path(e.parentId,new Set([...stack,id])):[]),{service:e.service,type:e.type,operation:e.location}];
     paths.set(id,result);return result;
   }
-  for (const e of events.values()) if (e.metadata.propagation === 'lineage-v1' && ![...events.values()].some(child=>child.parentId===e.id&&child.type==='HTTP_INPUT')) complete=false;
+  for (const e of events.values()) if (e.metadata.propagation === 'lineage-v1' && ![...events.values()].some(child=>child.parentId===e.id&&child.type===(e.type==='QUEUE_PRODUCER'?'QUEUE_CONSUMER':'HTTP_INPUT'))) complete=false;
   const edges=[];const facts=[];const destinations=new Map();
   for(const c of canaries.values())for(const parent of c.parentCanaryIds)edges.push({from:parent,to:c.id,type:'DERIVED_FROM'});
   for(const e of events.values()){
     const route=path(e.id);
-    if(e.parentId&&events.has(e.parentId))edges.push({from:e.parentId,to:e.id,type:'CALLED'});
+    if(e.parentId&&events.has(e.parentId))edges.push({from:e.parentId,to:e.id,type:e.type==='QUEUE_CONSUMER'?'CONSUMED_BY':'CALLED'});
     for(const id of e.canaryIds)edges.push({from:id,to:e.id,type:'OBSERVED_AT'});
     const m=e.metadata;let destination=null;
     if(['DATABASE_WRITE','DEMO_WRITE','DATABASE_READ'].includes(e.type)){
@@ -71,9 +71,10 @@ export function buildGraph(input) {
       if(!m.destination||!m.method||!(m.sinkPath||m.path))fail();
       destination={category:'http',name:m.destination,operation:m.method,path:m.sinkPath??(m.destination==='mock-email-service'&&m.path==='/mock-email/fail'?'/mock-email':m.path)};
     }
+    if(e.type==='QUEUE_PRODUCER'){if(!m.destination)fail();destination={category:'queue',name:m.destination,operation:'ENQUEUE_CONTEXT'};}
     if(destination){
       const destinationId=`destination:${JSON.stringify(destination)}`;destinations.set(destinationId,{id:destinationId,...destination});
-      edges.push({from:e.id,to:destinationId,type:e.type==='DATABASE_READ'?'READ_FROM':e.type==='HTTP_OUTPUT'?'SENT_TO':'WRITTEN_TO'});
+      edges.push({from:e.id,to:destinationId,type:e.type==='DATABASE_READ'?'READ_FROM':e.type==='HTTP_OUTPUT'?'SENT_TO':e.type==='QUEUE_PRODUCER'?'ENQUEUED_TO':'WRITTEN_TO'});
     }
     if(facts.length+e.canaryIds.length>20000)fail();
     for(const id of e.canaryIds)facts.push({eventId:e.id,canaryId:id,label:canaries.get(id).label,service:e.service,type:e.type,operation:e.location,path:route,transformations:transforms(id),destination,status:e.status,targetService:m.targetService??null});

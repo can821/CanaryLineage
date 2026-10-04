@@ -72,8 +72,9 @@ export function createCanaryLineage({ serviceName, storage, failureMode = 'open'
       if (trace.diagnostics.length < 8) trace.diagnostics.push({ code });
       if (failureMode === 'strict') throw new Error(code);
     },
-    async run({ canaries, synthetic = false, propagation, trusted = false }, operation) {
+    async run({ canaries, synthetic = false, propagation, trusted = false, transport = 'http' }, operation) {
       if (synthetic !== true || !Array.isArray(canaries) || canaries.length === 0 || typeof operation !== 'function') throw new Error('Explicit synthetic canaries and callback required');
+      if (!['http','queue'].includes(transport)) throw new Error('Invalid transport');
       let incoming = null; let propagationRejected = false;
       if (propagation !== undefined) {
         try {
@@ -104,7 +105,7 @@ export function createCanaryLineage({ serviceName, storage, failureMode = 'open'
       await runWithTrace(trace, async () => {
         try {
           if (incoming) {
-            const event=guard(t=>append(t,{type:'HTTP_INPUT',location:serviceName,refs,status:'success',metadata:{sourceService:incoming.sourceService}}));
+            const event=guard(t=>append(t,{type:transport==='queue'?'QUEUE_CONSUMER':'HTTP_INPUT',location:serviceName,refs,status:'success',metadata:{sourceService:incoming.sourceService}}));
             result=event ? await withParent(event.id,()=>operation(refs)) : await operation(refs);
           } else result = await operation(refs);
         }
@@ -123,6 +124,16 @@ export function createCanaryLineage({ serviceName, storage, failureMode = 'open'
       }
       if (businessFailed) throw businessError; // Never replace an application error with instrumentation failure.
       return { result, trace: structuredClone(trace), traceSaved };
+    },
+    createJobContext({ targetService, canaries }) {
+      return guard(trace=>{
+        if(!distributed)throw new Error('Distributed mode required');
+        const sources=resolve(trace,canaries);const needed=new Set();
+        const include=c=>{if(needed.has(c.id))return;c.parentCanaryIds.forEach(id=>include(trace.canaries.find(item=>item.id===id)));needed.add(c.id);};sources.forEach(include);
+        const event=append(trace,{type:'QUEUE_PRODUCER',location:targetService,refs:canaries,metadata:{destination:targetService,targetService},status:'observed'});
+        const encoded=encodePropagation({version:1,traceId:trace.id,segmentId:trace.segmentId,parentEventId:event.id,sourceService:serviceName,targetService,canaries:trace.canaries.filter(c=>needed.has(c.id)).map(({id,label,category,parentCanaryIds,operation,depth})=>({id,label,category,parentCanaryIds,operation,depth}))},budget.maxPropagationBytes);
+        event.metadata.propagation='lineage-v1';return encoded;
+      });
     },
     async http({ url, targetService, canaries, body, method = 'POST', timeoutMs = 2000, propagate = true }) {
       const endpoint = new URL(url);

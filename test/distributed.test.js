@@ -50,3 +50,19 @@ test('distributed memory storage keeps same-trace segments without overwriting',
   await store.saveTrace({id:'shared',segmentId:'a'});await store.saveTrace({id:'shared',segmentId:'b'});
   assert.equal((await store.getSegments('shared')).length,2);
 });
+
+test('HTTP target guards and timeouts preserve host failure and bounded incomplete propagation evidence',async t=>{
+  const server=createServer((_req,res)=>{const timer=setTimeout(()=>res.end(),100);res.on('close',()=>clearTimeout(timer));});
+  server.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>new Promise(r=>server.close(r)));
+  const origin=`http://127.0.0.1:${server.address().port}`;const store=memoryTraceStore();let traceId;
+  const sdk=createCanaryLineage({serviceName:'timeouts',distributed:true,storage:{mode:'memory-demo',async saveTrace(trace){traceId=trace.id;await store.saveTrace(trace);},getTrace:store.getTrace},allowedOrigins:[origin],failureMode:'strict'});
+  await assert.rejects(sdk.run({synthetic:true,canaries:[{label:'email',value:'synthetic'}]},refs=>sdk.http({url:origin,targetService:'target',canaries:refs,timeoutMs:10})),e=>e.name==='TimeoutError');
+  assert.equal((await store.getSegments(traceId))[0].events[0].status,'failed');
+  await assert.rejects(sdk.run({synthetic:true,canaries:[{label:'email',value:'synthetic'}]},refs=>sdk.http({url:'http://example.test',targetService:'other',canaries:refs})),/rejected/);
+  const bounded=createCanaryLineage({serviceName:'bounded',distributed:true,limits:{maxPropagationBytes:1},allowedOrigins:[origin]});
+  const limited=await bounded.run({synthetic:true,canaries:[{label:'email',value:'synthetic'}]},refs=>bounded.http({url:origin,targetService:'target',canaries:refs,timeoutMs:1000}));
+  await limited.result.body.cancel();assert.equal(limited.trace.incomplete,true);
+  const queue=createCanaryLineage({serviceName:'worker',distributed:true});
+  const bad=await queue.run({synthetic:true,transport:'queue',propagation:'broken',trusted:true,canaries:[{label:'email',value:'synthetic'}]},()=>42);
+  assert.equal(bad.result,42);assert.equal(bad.trace.incomplete,true);
+});
