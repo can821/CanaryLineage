@@ -90,7 +90,7 @@ In **Compare traces**, use two saved trace IDs. The first two saved traces popul
 
 Storage identities use table + column + operation; `DATABASE_WRITE` and `DEMO_WRITE` share a logical `STORAGE_WRITE` identity, while the response keeps both storage modes visible. This does not equate memory with durable PostgreSQL or distinguish physical databases. HTTP identities use destination + method + logical path; ephemeral mock ports are irrelevant. The mock's deliberate failure route maps to the same logical `/mock-email` operation.
 
-IDs, values, order, duplicate events, timestamps, duration and success/failure do not change destination identity. Failed or pending calls still represent observed attempts. Missing destinations can reflect an incomplete execution; results are neither proof of delivery nor a privacy violation. Comparison does not discover uninstrumented paths or compare graph topology.
+IDs, values, order, duplicate events, timestamps, duration and success/failure do not change destination identity. Failed or pending calls still represent observed attempts. Missing destinations can reflect an incomplete execution; results are neither proof of delivery nor a privacy violation. This legacy destination comparison does not compare topology; the distributed explorer/CLI uses the semantic graph model. Neither discovers uninstrumented paths.
 
 ## Real PostgreSQL setup
 
@@ -127,7 +127,7 @@ npm start
 
 `db:init` creates tables inside an existing database; it does not create the database or erase rows. `test:postgres` requires `TEST_DATABASE_URL` pointing to a dedicated test database. It creates and removes only its own random test schema. Missing configuration fails explicitly instead of skipping.
 
-The integration test covers actual INSERT/read, atomic rollback, duplicate races, HTTP branches, failed HTTP after successful DB write, and reading through a **fresh Node application process**. This workflow passed in normal macOS Terminal, as reported by the project owner; it was not rerun successfully inside Work. For a manual persistence check, save a trace ID, stop/restart `npm start`, then open `/api/traces/<id>`.
+The integration test covers actual INSERT/read, atomic rollback, duplicate races, HTTP branches, failed HTTP after successful DB write, and reading through a **fresh Node application process**. The agent reran this workflow successfully against temporary real PostgreSQL 17.10 on 4 October 2026. For a manual persistence check, save a trace ID, stop/restart `npm start`, then open `/api/traces/<id>`.
 
 ## Trace persistence and failures
 
@@ -162,9 +162,9 @@ npm run test:postgres   # Real PostgreSQL integration, separate prerequisite
 npm run dev            # PostgreSQL mode; restart on source changes
 ```
 
-Tests exercise overlapping async requests, parent relationships, value isolation, real loopback HTTP, failure, timeout, finalization failure, SQL parameterization and rollback. The GitHub Actions workflow provisions PostgreSQL 17 and runs both groups after publication. [GitHub Actions passed on 2 October 2026](https://github.com/can821/CanaryLineage/actions/runs/36989343482), including both `npm run verify` and the real PostgreSQL integration test for v0.1. This historical result does not verify the new v0.2 commits; their remote CI awaits an authenticated push.
+Tests exercise overlapping async requests, parent relationships, value isolation, real loopback HTTP, failure, timeout, finalization failure, SQL parameterization and rollback. The GitHub Actions workflow provisions PostgreSQL 17 and runs both groups after publication. [GitHub Actions passed on 2 October 2026](https://github.com/can821/CanaryLineage/actions/runs/36989343482), including both `npm run verify` and the real PostgreSQL integration test for v0.1. This is historical v0.1 evidence. For v0.4, inspect the workflow attached to the published commit.
 
-**PostgreSQL verification:** on 4 October 2026 this agent successfully ran both real PostgreSQL integration tests using the isolated temporary workflow with elevated execution permission. Earlier, on 1 October 2026 the project owner reported a successful real `verify:postgres` run in normal macOS Terminal, including connection, schema, INSERT, HTTP, transactions and retrieval after the writer process exited. Work's sandbox could not start PostgreSQL and did not perform that successful run. See the [verification record](docs/VERIFICATION.md) for the evidence and its provenance.
+**PostgreSQL verification:** on 4 October 2026 this agent successfully ran all three real PostgreSQL integration test files using the isolated temporary workflow with elevated execution permission. Earlier, on 1 October 2026 the project owner reported a successful real `verify:postgres` run in normal macOS Terminal, including connection, schema, INSERT, HTTP, transactions and retrieval after the writer process exited. That earlier sandbox limitation was resolved for the current isolated verification workflow. See the [verification record](docs/VERIFICATION.md) for the evidence and its provenance.
 
 ## Important files
 
