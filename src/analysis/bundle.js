@@ -4,7 +4,7 @@ const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex
 export function exportBundle(input){
   const graph=buildGraph(input);const segments=Array.isArray(input)?input:[input];
   const safe=segments.map(segment=>{
-    const copy={schemaVersion:segment.schemaVersion,id:segment.id,serviceName:segment.serviceName??'legacy',status:segment.status,incomplete:Boolean(segment.incomplete),startedAt:segment.startedAt,finishedAt:segment.finishedAt};
+    const copy={...(segment.propagationTrust?{propagationTrust:segment.propagationTrust}:{}),...(segment.diagnostics?{diagnostics:segment.diagnostics.filter(d=>['RESOURCE_LIMIT','ROW_INSPECTION_LIMIT','TRACE_STORE_FAILED','INSTRUMENTATION_REJECTED','PROPAGATION_REJECTED','UNSUPPORTED_QUERY_RESULT'].includes(d.code)).map(d=>({code:d.code}))}:{}),schemaVersion:segment.schemaVersion,id:segment.id,serviceName:segment.serviceName??'legacy',status:segment.status,incomplete:Boolean(segment.incomplete),startedAt:segment.startedAt,finishedAt:segment.finishedAt};
     if(segment.segmentId)copy.segmentId=segment.segmentId;
     if(segment.schemaVersion>=2)copy.canaries=segment.canaries.map(c=>({id:c.id,label:c.label,category:c.category,parentCanaryIds:c.parentCanaryIds,operation:c.operation,depth:c.depth}));
     copy.events=segment.events.map(e=>{

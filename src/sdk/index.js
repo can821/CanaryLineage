@@ -1,4 +1,4 @@
-import { encodePropagation, parsePropagation, PROPAGATION_HEADER } from './propagation.js';
+import { encodePropagation, parsePropagation, PROPAGATION_HEADER, authenticationConfig } from './propagation.js';
 export { parsePropagation, PROPAGATION_HEADER } from './propagation.js';
 import { randomUUID } from 'node:crypto';
 import { runWithTrace, currentTrace, withParent, observe as recordObservation } from '../instrumentation.js';
@@ -10,11 +10,12 @@ const TYPES = new Set(['FUNCTION', 'HTTP_INPUT', 'HTTP_OUTPUT', 'DATABASE_WRITE'
 const text = (value, max = 128) => typeof value === 'string' && value.length > 0 && value.length <= max;
 
 /** Explicit synthetic-data SDK. Store contract: async saveTrace(document), getTrace(id). */
-export function createCanaryLineage({ serviceName, storage, failureMode = 'open', limits = {}, distributed = false, allowedOrigins = [] } = {}) {
+export function createCanaryLineage({ serviceName, storage, failureMode = 'open', limits = {}, distributed = false, allowedOrigins = [], propagationAuthentication } = {}) {
   if (!text(serviceName) || !['open', 'strict'].includes(failureMode)) throw new Error('Invalid SDK configuration');
   if (storage && (typeof storage.saveTrace !== 'function' || typeof storage.getTrace !== 'function')) throw new Error('Invalid trace store');
   if (!Array.isArray(allowedOrigins) || allowedOrigins.some(origin => typeof origin !== 'string' || new URL(origin).origin !== origin)) throw new Error('Invalid allowed origins');
   const origins = new Set(allowedOrigins);
+  const authentication=authenticationConfig(propagationAuthentication)??undefined;
   const budget = { maxEvents: 1000, maxCanaries: 64, maxDepth: 16, maxValueBytes: 4096, maxMetadataBytes: 2048, maxPropagationBytes: 8192, ...limits };
   for (const [key, value] of Object.entries(budget)) {
     if (!['maxEvents','maxCanaries','maxDepth','maxValueBytes','maxMetadataBytes','maxPropagationBytes'].includes(key) || !Number.isSafeInteger(value) || value < 1 || value > 1000000) throw new Error('Invalid SDK limit');
@@ -32,7 +33,7 @@ export function createCanaryLineage({ serviceName, storage, failureMode = 'open'
     try { return fn(trace); }
     catch (error) {
       trace.incomplete = true;
-      if (trace.diagnostics.length < 8) trace.diagnostics.push({ code: 'INSTRUMENTATION_REJECTED' });
+      if (trace.diagnostics.length < 8) trace.diagnostics.push({ code: /limit|depth/i.test(error.message)?'RESOURCE_LIMIT':'INSTRUMENTATION_REJECTED' });
       if (failureMode === 'strict') throw error;
       return null;
     }
@@ -79,7 +80,7 @@ export function createCanaryLineage({ serviceName, storage, failureMode = 'open'
       if (propagation !== undefined) {
         try {
           if (!distributed) throw new Error('Distributed tracing is not enabled');
-          incoming = parsePropagation(propagation, { trusted, maxBytes: budget.maxPropagationBytes });
+          incoming = parsePropagation(propagation, { trusted, maxBytes: budget.maxPropagationBytes, authentication });
           if (incoming && incoming.targetService !== serviceName) throw new Error('Wrong target service');
           if (incoming && (incoming.canaries.length > budget.maxCanaries || incoming.canaries.some(c=>c.depth > budget.maxDepth))) throw new Error('Incoming context exceeds local limits');
         } catch {
@@ -90,6 +91,7 @@ export function createCanaryLineage({ serviceName, storage, failureMode = 'open'
       const trace = { schemaVersion: distributed ? 3 : 2, id: randomUUID(), serviceName, storage: storage?.mode ?? 'none', status: 'pending', startedAt: new Date().toISOString(), canaries: [], events: [], diagnostics: [], incomplete: false };
       if (distributed) { trace.segmentId = randomUUID(); trace.parentEventId = incoming?.parentEventId ?? null; }
       if (incoming) { trace.id = incoming.traceId; trace.sourceService = incoming.sourceService; trace.canaries = structuredClone(incoming.canaries); }
+      trace.propagationTrust=propagationRejected?'rejected':incoming?(incoming.authentication==='verified'?'verified':'unsigned'):'local';
       if (propagationRejected) { trace.incomplete = true; trace.diagnostics.push({code:'PROPAGATION_REJECTED'}); }
       owned.add(trace);
       const bound = new Set();
@@ -131,7 +133,7 @@ export function createCanaryLineage({ serviceName, storage, failureMode = 'open'
         const sources=resolve(trace,canaries);const needed=new Set();
         const include=c=>{if(needed.has(c.id))return;c.parentCanaryIds.forEach(id=>include(trace.canaries.find(item=>item.id===id)));needed.add(c.id);};sources.forEach(include);
         const event=append(trace,{type:'QUEUE_PRODUCER',location:targetService,refs:canaries,metadata:{destination:targetService,targetService},status:'observed'});
-        const encoded=encodePropagation({version:1,traceId:trace.id,segmentId:trace.segmentId,parentEventId:event.id,sourceService:serviceName,targetService,canaries:trace.canaries.filter(c=>needed.has(c.id)).map(({id,label,category,parentCanaryIds,operation,depth})=>({id,label,category,parentCanaryIds,operation,depth}))},budget.maxPropagationBytes);
+        const encoded=encodePropagation({version:1,traceId:trace.id,segmentId:trace.segmentId,parentEventId:event.id,sourceService:serviceName,targetService,canaries:trace.canaries.filter(c=>needed.has(c.id)).map(({id,label,category,parentCanaryIds,operation,depth})=>({id,label,category,parentCanaryIds,operation,depth}))},budget.maxPropagationBytes,authentication);
         event.metadata.propagation='lineage-v1';return encoded;
       });
     },
@@ -146,7 +148,7 @@ export function createCanaryLineage({ serviceName, storage, failureMode = 'open'
         const include=c=>{ if(needed.has(c.id))return; c.parentCanaryIds.forEach(id=>include(trace.canaries.find(item=>item.id===id))); needed.add(c.id); };
         resolve(trace,canaries).forEach(include);
         return encodePropagation({version:1,traceId:trace.id,segmentId:trace.segmentId,parentEventId:event.id,sourceService:serviceName,targetService,
-          canaries:trace.canaries.filter(c=>needed.has(c.id)).map(({id,label,category,parentCanaryIds,operation,depth})=>({id,label,category,parentCanaryIds,operation,depth}))},budget.maxPropagationBytes);
+          canaries:trace.canaries.filter(c=>needed.has(c.id)).map(({id,label,category,parentCanaryIds,operation,depth})=>({id,label,category,parentCanaryIds,operation,depth}))},budget.maxPropagationBytes,authentication);
       });
       if (header && event) event.metadata.propagation = 'lineage-v1';
       try {

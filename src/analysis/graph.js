@@ -8,13 +8,20 @@ export function buildGraph(input) {
   const segments=Array.isArray(input)?input:[input];
   if(!segments.length || segments.length>128)fail();
   const events=new Map(),canaries=new Map(),services=new Set(),segmentIds=new Set();
-  let traceId;let complete=true;
+  let traceId;let complete=true;const reasons=new Set(),trust=new Set();
   for(const trace of segments){
     if(!trace || ![1,2,3].includes(trace.schemaVersion) || !string(trace.id,128) || !Array.isArray(trace.events) || trace.events.length>10000 || !['pending','completed','failed'].includes(trace.status))fail();
     if(traceId && traceId!==trace.id)fail();traceId=trace.id;
     const service=trace.serviceName??'legacy';if(!string(service,128))fail();services.add(service);
     const segment=trace.segmentId??trace.id;if(!string(segment,128)||segmentIds.has(segment))fail();segmentIds.add(segment);
-    if(trace.incomplete || trace.status==='pending')complete=false;
+    if(trace.propagationTrust!==undefined&&!['local','verified','unsigned','rejected'].includes(trace.propagationTrust))fail();
+    trust.add(trace.propagationTrust??'unknown');
+    if(trace.propagationTrust==='rejected'){reasons.add('UNTRUSTED');complete=false;}
+    if(trace.incomplete || trace.status==='pending'){complete=false;reasons.add('PARTIAL');}
+    if(trace.diagnostics!==undefined){
+      if(!Array.isArray(trace.diagnostics)||trace.diagnostics.length>8)fail();
+      for(const diagnostic of trace.diagnostics)if(['RESOURCE_LIMIT','ROW_INSPECTION_LIMIT'].includes(diagnostic?.code)){reasons.add('TRUNCATED');complete=false;}
+    }
     const registry=trace.schemaVersion===1?[{id:`${trace.id}:canary`,label:'canary',category:'synthetic',parentCanaryIds:[],operation:null}]:trace.canaries;
     if(!Array.isArray(registry)||registry.length>256)fail();
     const local=new Set();
@@ -35,6 +42,7 @@ export function buildGraph(input) {
         if(event.metadata[key]!==undefined){if(!string(event.metadata[key],256))fail();metadata[key]=event.metadata[key];}
       }
       if(event.sequence!==undefined && (!Number.isSafeInteger(event.sequence)||event.sequence<1))fail();
+      if(event.status==='pending'){complete=false;reasons.add('PENDING_EVENT');}
       events.set(event.id,{id:event.id,parentId:event.parentId,type:event.type,location:event.location,service,canaryIds:[...ids],metadata,status:event.status,...(string(event.occurredAt,40)&&Number.isFinite(Date.parse(event.occurredAt))?{occurredAt:event.occurredAt}:{}),...(event.sequence?{sequence:event.sequence}:{})});
     }
   }
@@ -53,11 +61,11 @@ export function buildGraph(input) {
   function path(id,stack=new Set()){
     if(paths.has(id))return paths.get(id);
     if(stack.has(id)||stack.size>128)fail();
-    const e=events.get(id);if(!e){complete=false;return [];}
+    const e=events.get(id);if(!e){complete=false;reasons.add('MISSING_PARENT');return [];}
     const result=[...(e.parentId?path(e.parentId,new Set([...stack,id])):[]),{service:e.service,type:e.type,operation:e.location}];
     paths.set(id,result);return result;
   }
-  for (const e of events.values()) if (e.metadata.propagation === 'lineage-v1' && ![...events.values()].some(child=>child.parentId===e.id&&child.type===(e.type==='QUEUE_PRODUCER'?'QUEUE_CONSUMER':'HTTP_INPUT'))) complete=false;
+  for (const e of events.values()) if (e.metadata.propagation === 'lineage-v1' && ![...events.values()].some(child=>child.parentId===e.id&&child.type===(e.type==='QUEUE_PRODUCER'?'QUEUE_CONSUMER':'HTTP_INPUT'))){complete=false;reasons.add('MISSING_SEGMENT');}
   const edges=[];const facts=[];const destinations=new Map();
   for(const c of canaries.values())for(const parent of c.parentCanaryIds)edges.push({from:parent,to:c.id,type:'DERIVED_FROM'});
   for(const e of events.values()){
@@ -80,5 +88,6 @@ export function buildGraph(input) {
     if(facts.length+e.canaryIds.length>20000)fail();
     for(const id of e.canaryIds)facts.push({eventId:e.id,canaryId:id,label:canaries.get(id).label,service:e.service,type:e.type,operation:e.location,path:route,transformations:transforms(id),destination,status:e.status,targetService:m.targetService??null});
   }
-  return {schemaVersion:1,traceId,complete,services:[...services].sort(),nodes:{events:ordered(events.values()),canaries:ordered(canaries.values()),destinations:ordered(destinations.values())},edges:ordered(edges),facts:ordered(facts)};
+  const evidence={state:reasons.has('UNTRUSTED')?'UNTRUSTED':reasons.has('TRUNCATED')?'TRUNCATED':complete?'COMPLETE':'PARTIAL',trust:[...trust].sort(),reasons:[...reasons].sort()};
+  return {schemaVersion:1,traceId,complete,evidence,services:[...services].sort(),nodes:{events:ordered(events.values()),canaries:ordered(canaries.values()),destinations:ordered(destinations.values())},edges:ordered(edges),facts:ordered(facts)};
 }
