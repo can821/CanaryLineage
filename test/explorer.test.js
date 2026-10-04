@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { createApp } from '../src/app.js';
+import { memoryRepository } from '../src/repositories/memory.js';
+import { startDistributed } from '../examples/distributed-fixture.js';
+import { exportBundle,buildGraph,compareGraphs,evaluatePolicies } from '../src/analysis/index.js';
+test('explorer imports schema-3 bundles and returns exactly the CLI core evidence; rejects corruption',async t=>{
+  const fixture=await startDistributed();t.after(()=>fixture.close());
+  const baseline=await fixture.run({suffix:'ui-base'}),current=await fixture.run({regression:true,suffix:'ui-current'});
+  const policy={schemaVersion:1,rules:[{id:'no-new',type:'NO_NEW_DESTINATIONS'}]};
+  const server=createApp({repository:memoryRepository()}).listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>new Promise(r=>server.close(r)));
+  const base=`http://127.0.0.1:${server.address().port}`;
+  const send=body=>fetch(base+'/api/explorer/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  const result=await send({current:exportBundle(current),baseline:exportBundle(baseline),policy});assert.equal(result.status,200);
+  assert.deepEqual(await result.json(),{graph:buildGraph(current),diff:compareGraphs(baseline,current),policy:evaluatePolicies(current,policy,{baseline})});
+  const invalid=exportBundle(current);invalid.checksum='wrong';assert.equal((await send({current:invalid})).status,400);
+  assert.equal((await send({current:{schemaVersion:99}})).status,400);
+  assert.equal((await send({current:'x'.repeat(2*1024*1024)})).status,413);
+  const html=await(await fetch(base+'/explorer.html')).text();assert.match(html,/Service graph/);assert.match(html,/explorer.js/);
+});

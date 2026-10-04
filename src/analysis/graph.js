@@ -34,7 +34,8 @@ export function buildGraph(input) {
       for(const key of ['table','column','operation','destination','method','path','sinkPath','targetService','sourceService','propagation']){
         if(event.metadata[key]!==undefined){if(!string(event.metadata[key],256))fail();metadata[key]=event.metadata[key];}
       }
-      events.set(event.id,{id:event.id,parentId:event.parentId,type:event.type,location:event.location,service,canaryIds:[...ids],metadata,status:event.status});
+      if(event.sequence!==undefined && (!Number.isSafeInteger(event.sequence)||event.sequence<1))fail();
+      events.set(event.id,{id:event.id,parentId:event.parentId,type:event.type,location:event.location,service,canaryIds:[...ids],metadata,status:event.status,...(string(event.occurredAt,40)&&Number.isFinite(Date.parse(event.occurredAt))?{occurredAt:event.occurredAt}:{}),...(event.sequence?{sequence:event.sequence}:{})});
     }
   }
   if(events.size>10000 || canaries.size>1024)fail();

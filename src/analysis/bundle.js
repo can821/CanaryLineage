@@ -9,7 +9,7 @@ export function exportBundle(input){
     if(segment.schemaVersion>=2)copy.canaries=segment.canaries.map(c=>({id:c.id,label:c.label,category:c.category,parentCanaryIds:c.parentCanaryIds,operation:c.operation,depth:c.depth}));
     copy.events=segment.events.map(e=>{
       const safeEvent=graph.nodes.events.find(n=>n.id===e.id);
-      return {id:e.id,parentId:e.parentId,type:e.type,location:e.location,status:e.status,metadata:safeEvent.metadata,...(segment.schemaVersion>=2?{canaryIds:e.canaryIds}:{}),...(segment.schemaVersion>=3?{traceId:segment.id,segmentId:segment.segmentId}:{} )};
+      return {id:e.id,parentId:e.parentId,type:e.type,location:e.location,status:e.status,...(safeEvent.occurredAt?{occurredAt:safeEvent.occurredAt}:{}),...(e.sequence?{sequence:e.sequence}:{}),metadata:safeEvent.metadata,...(segment.schemaVersion>=2?{canaryIds:e.canaryIds}:{}),...(segment.schemaVersion>=3?{traceId:segment.id,segmentId:segment.segmentId}:{} )};
     });
     return copy;
   });

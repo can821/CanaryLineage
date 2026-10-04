@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CanaryLineage · Evidence explorer</title><link rel="stylesheet" href="explorer.css"><script src="explorer.js" defer></script></head><body>
+<header><a href="/">← Single-service demo</a><p>CANARYLINEAGE / DISTRIBUTED EVIDENCE</p><h1>Where did the canary go?</h1><p>Import collected traces or checksum bundles. Analysis uses the same engine as the CLI.</p></header>
+<main><section class="imports"><label>Current trace / bundle<input id="current" type="file" accept=".json"></label><label>Baseline (optional)<input id="baseline" type="file" accept=".json"></label><label>Policy (optional)<input id="policy" type="file" accept=".json"></label><button id="analyze">Analyze evidence</button></section>
+<p id="status" role="status">Choose a current bundle to begin. Files are analyzed by this local server; they are not saved.</p>
+<section class="filters"><label>Canary<select id="canary"><option value="">All canaries</option></select></label><label>Service<select id="service"><option value="">All services</option></select></label><label>Destination<select id="destination"><option value="">All destinations</option></select></label></section>
+<section><h2>Service graph</h2><div id="services" class="cards"></div><div id="hops"></div></section>
+<div class="columns"><section><h2>Policy result</h2><div id="verdict">No policy supplied.</div></section><section><h2>Baseline → current</h2><div id="changes">No baseline supplied.</div></section></div>
+<section><h2>Trace timeline & causal evidence</h2><p>Times are reported by each service clock; parent IDs establish causality. Imported older bundles may omit time.</p><div id="timeline"></div></section>
+<section><h2>Selected event details</h2><pre id="details">Select an event to inspect its IDs, parent and evidence.</pre></section></main></body></html>

@@ -1,4 +1,5 @@
 import express from 'express';
+import { explorerRouter } from './explorer.js';
 import { compareTraces } from './comparison.js';
 import { fileURLToPath } from 'node:url';
 import { AppError } from './errors.js';
@@ -18,6 +19,7 @@ export function createApp({ repository, sendEmail }) {
     });
     next();
   });
+  app.use('/api/explorer', explorerRouter());
   app.use(express.json({ limit: '8kb' }));
 
   app.get('/api/health', async (_req, res) => {
