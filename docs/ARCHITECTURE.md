@@ -48,3 +48,7 @@ Reference: [Node.js async context documentation](https://nodejs.org/api/async_co
 Storage key: `[STORAGE_WRITE, table, column, operation]`. HTTP key: `[HTTP_OUTPUT, destination, method, sinkPath]`, with legacy fallback to path and explicit normalization of the mock failure route. Logical service identity intentionally ignores the mock's ephemeral port. Storage identity is logical, not a physical database identifier; original storage modes and trace statuses remain in the response.
 
 The engine ignores event order, duplicate observations, value, timestamps, duration and result status. Failed attempts remain observed destinations; a missing event is not proof that an external system stopped receiving data. The UI keeps the original trace viewer primary and adds a compact three-column result, stacked on mobile. No new dependencies or graph-diff framework.
+
+## v0.2 SDK addition
+
+`src/sdk/index.js` adds owned execution/handle contracts on the existing AsyncLocalStorage and recorder. Schema-v1 remains unchanged; schema-v2 uses a canary registry and event canary IDs. Transformations link parent canary IDs independently of event call-parent IDs. Memory/PostgreSQL trace stores are independent from the demo's user repository transaction protocol. `src/sdk/postgres.js` observes mapped returned fields, never raw SQL. See SDK.md for failure modes, limits and deferred distributed scope.

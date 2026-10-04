@@ -10,3 +10,5 @@
 - Kod değişiklikleri için `npm run verify`; SQL/depolama değişiklikleri için mümkünse ayrıca `npm run test:postgres` çalıştır. Gerçek veritabanı yoksa bu doğrulamayı açık olarak raporla.
 - Milestone durumları README'de, doğrulama kanıtı `docs/VERIFICATION.md` içinde tutulur. Çalışan ve doğrulanmamış kısımları ayrı belirt.
 - Kapanışta proje ağacı, basit mimari, milestone'lar, test sonuçları, çalıştırma, sınırlar ve sıradaki mantıklı adımı kısa özetle.
+
+- v0.2 SDK: çoklu sentetik canary, açık derive, PostgreSQL read/write, sınırlar ve open/strict davranışı eklendi. Schema-v1 demo semantiğini koru. SDK schema-v2 kullanır; dağıtık propagation/queue/policy/UI desteği henüz yok.

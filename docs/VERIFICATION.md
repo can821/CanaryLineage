@@ -40,3 +40,14 @@ PG_BIN="/path/to/postgresql/bin" npm run verify:postgres -- --temporary
 ```
 
 See [local workflow](POSTGRES_LOCAL.md). Memory-demo remains ephemeral and is never described as PostgreSQL. Failed HTTP does not undo an earlier database commit. Destination comparison counts observed attempts, not guaranteed delivery or privacy violations.
+
+
+## 4 October 2026 — v0.2 SDK alpha
+
+This run independently executed the existing isolated real PostgreSQL workflow with elevated execution permission; both original integration and new SDK integration passed. This supersedes the earlier sandbox-only execution limitation for this run, without rewriting the provenance of earlier owner-reported evidence. No system settings/installations changed.
+
+New real flow: synthetic email → explicit SHA-256 derive → PostgreSQL INSERT RETURNING → SELECT of the same derived hash → actual localhost HTTP sink; received hash matches and all observations reference the derived identity. SDK snapshot persisted and retrieved through a fresh PostgreSQL connection. Original integration separately retains the writer-process exit/fresh-reader-process persistence check. No SDK distributed service or cross-request restoration claim.
+
+Benchmark (Node 24.19.0, one local run, 200 warmup + 2000 sequential samples each, one event, no sockets/DB/store): baseline p50 0.000083 ms, p95 0.000125 ms; SDK p50 0.005292 ms, p95 0.007625 ms. Approximate p50 increment 0.005209 ms. Throughput 4,669,264 baseline vs 156,085 SDK operations/s. Heap delta −437,896 vs +388,520 bytes; GC makes this noisy, not retained-memory measurement. Not production RPS, HTTP latency, or PostgreSQL write-overhead evidence. Reproduce with npm run benchmark:sdk.
+
+Final regression: 43 core tests passed, 0 failed, 0 skipped; syntax checks passed. Two real PostgreSQL integration tests passed through the isolated temporary workflow. SDK example and npm package dry-run checked. Browser UI was not changed in v0.2; no new UI or distributed feature is claimed.

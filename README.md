@@ -12,6 +12,14 @@ Built by **Can Yılmaz**.
 
 *Local memory-demo: the comparison below the trace shows an added mock HTTP destination. This screenshot does not demonstrate PostgreSQL persistence.*
 
+## v0.2.0: reusable runtime SDK (alpha)
+
+The existing v0.1 browser demo remains compatible. The new [SDK](docs/SDK.md) supports multiple synthetic canaries in one execution, explicit transformation ancestry, overall/per-canary destination comparison, and PostgreSQL read/write observations of returned known values. It reuses the existing async context and event recorder, with a versioned schema-v2 document and separate trace-store contract.
+
+`npm run demo:sdk` prints an explicitly illustrative SDK trace and comparison. `npm run verify:postgres` includes the real **synthetic value → SHA-256 derive → PostgreSQL INSERT → SELECT → localhost HTTP** integration. `npm run benchmark:sdk` measures an in-process microbenchmark, not production throughput.
+
+No distributed propagation, queues, policy CLI or SDK trace UI is included in this release. The existing graphical console still uses the v0.1 demo model. The package remains private to prevent accidental npm publication; install the checkout locally as documented in [SDK.md](docs/SDK.md).
+
 ## At a glance
 
 - **Trace a synthetic value:** preserve request context across asynchronous work with `AsyncLocalStorage` and inspect parent/child events in a dark trace console.
@@ -21,7 +29,7 @@ Built by **Can Yılmaz**.
 
 **Stack:** JavaScript · Node.js · Express · PostgreSQL · plain HTML/CSS/JavaScript.
 
-**Scope:** package v0.1.0; explicit instrumentation of selected boundaries. This is not whole-program discovery, full taint analysis, a privacy-compliance guarantee or production-ready security software.
+**Scope:** package v0.2.0 alpha; explicit instrumentation of selected boundaries. This is not whole-program discovery, full taint analysis, a privacy-compliance guarantee or production-ready security software.
 
 For a short review, run the [demo](#quick-start), try the [destination comparison](#compare-destinations), then inspect the [architecture](docs/ARCHITECTURE.md) and [checks](#checks-and-scripts).
 
