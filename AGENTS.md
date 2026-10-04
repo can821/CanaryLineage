@@ -12,3 +12,5 @@
 - Kapanışta proje ağacı, basit mimari, milestone'lar, test sonuçları, çalıştırma, sınırlar ve sıradaki mantıklı adımı kısa özetle.
 
 - v0.2 SDK: çoklu sentetik canary, açık derive, PostgreSQL read/write, sınırlar ve open/strict davranışı eklendi. Schema-v1 demo semantiğini koru. SDK schema-v2 kullanır; dağıtık propagation/queue/policy/UI desteği henüz yok.
+
+- v0.3: Kullanıcının sonraki kapsam talebiyle açık dağıtık HTTP/job context, graph/diff/policy ve CLI eklendi. Güncel kapsam docs/DISTRIBUTED.md, doğrulama docs/VERIFICATION.md içindedir. UI tek servisli demo olarak kalır. Bu tur gerçek geçici PostgreSQL doğrulaması ajan tarafından çalıştırıldı; eski sürüm notları tarihsel kayıttır.

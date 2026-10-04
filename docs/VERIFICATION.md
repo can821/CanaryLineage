@@ -1,3 +1,16 @@
+# v0.3.0 verification — 2026-10-04
+
+- macOS arm64 / Apple M5, Node 24.19.0; temporary real PostgreSQL 17.10.
+- `npm run verify`: syntax passed; 55 tests passed, 0 failed, 0 skipped.
+- `npm run verify:postgres -- --temporary`: passed all three integration files, including distributed PostgreSQL persistence and policy regression. No memory fallback.
+- `npm run demo:distributed` and `npm run check:regression`: real local multi-process HTTP baseline PASS/exit 0 and analytics regression FAIL/exit 1.
+- `npm run benchmark:distributed`: completed. HTTP SDK disabled p50/p95/p99 4.939/7.562/9.701 ms; enabled 5.161/6.108/10.330 ms. 100 sequential samples each, 10 warmups. Different percentile directions reflect noise/order effects; this does not establish a performance improvement. No PostgreSQL in benchmark; IPC evidence collection included.
+- Queue: delayed concurrent jobs restored in a separate worker process, followed by actual loopback HTTP. No vendor broker tested.
+- Node 22/24 Linux CI configured, not locally tested and not claimed remotely successful.
+- Distributed web UI, OTel and external project validation remain unimplemented.
+
+## Previous verification records (historical)
+
 # V1 verification — 1 October 2026
 
 **V1 scope complete, package v0.1.0. PostgreSQL VERIFIED via owner-reported normal macOS Terminal execution.**

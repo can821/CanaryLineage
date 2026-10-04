@@ -19,6 +19,10 @@ process.once('message',async config=>{
         let body='';for await(const part of req){body+=part;if(Buffer.byteLength(body)>8192)throw new Error('Body too large');}
         const data=JSON.parse(body);
         if(config.name==='analytics') {process.send({received:data});res.writeHead(204).end();return;}
+        if(config.disabled){
+          if(config.name==='users'||data.regression){const reply=await fetch(config.target,{method:'POST',body:JSON.stringify(data)});await reply.body?.cancel();if(!reply.ok)throw new Error('Downstream failed');}
+          res.writeHead(200).end('{}');return;
+        }
         const {result}=await sdk.run({synthetic:true,propagation:req.headers[PROPAGATION_HEADER],trusted:true,canaries:[{label:'email-sha256',value:data.hash},{label:'customer',value:data.customer}]},refs=>sdk.span('handle',refs,async()=>{
           if(pool){
             const db=postgresAdapter({pool,lineage:sdk});

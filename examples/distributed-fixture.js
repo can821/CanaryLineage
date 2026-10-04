@@ -4,7 +4,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { createCanaryLineage, postgresTraceStore } from '../src/sdk/index.js';
 
 /** Three separately executing Node services; all traffic is real localhost HTTP. */
-export async function startDistributed({ schema, pool } = {}) {
+export async function startDistributed({ schema, pool, disabled = false } = {}) {
   const segments=[];const received=[];const children=[];
   async function close(){
     await Promise.all(children.map(child=>new Promise(resolve=>{
@@ -33,11 +33,16 @@ export async function startDistributed({ schema, pool } = {}) {
   }
   try {
     const sink=await start({name:'analytics'});
-    const processor=await start({name:'processor',target:sink});
-    const users=await start({name:'users',target:processor,schema});
+    const processor=await start({name:'processor',target:sink,disabled});
+    const users=await start({name:'users',target:processor,schema,disabled});
     const persistent=pool?postgresTraceStore(pool):null;
     const sdk=createCanaryLineage({serviceName:'gateway',distributed:true,failureMode:'strict',allowedOrigins:[new URL(users).origin],storage:{mode:pool?'postgres':'memory-demo',async saveTrace(t){segments.push(t);await persistent?.saveTrace(t);},async getTrace(){return null;}}});
     return { received, close, async run({regression=false,suffix='one'}={}){
+      if(disabled){
+        const hash=createHash('sha256').update(`canary-${suffix}@example.test`.toLowerCase()).digest('hex');
+        const response=await fetch(users,{method:'POST',body:JSON.stringify({hash,customer:`synthetic-${suffix}`,regression})});
+        await response.body?.cancel();if(!response.ok)throw new Error('Uninstrumented request failed');return [];
+      }
       const result=await sdk.run({synthetic:true,canaries:[{label:'email',value:`canary-${suffix}@example.test`},{label:'customer',value:`synthetic-${suffix}`}]},([email,customer])=>sdk.span('signup',[email,customer],async()=>{
         const lower=sdk.derive({parents:[email],label:'email-lower',value:email.value.toLowerCase(),operation:'lowercase'});
         const hash=sdk.derive({parents:[lower],label:'email-sha256',value:createHash('sha256').update(lower.value).digest('hex'),operation:'sha256'});
