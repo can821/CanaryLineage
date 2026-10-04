@@ -10,6 +10,12 @@ export function runWithTrace(trace, operation) {
   return context.run({ trace, parentId: null }, operation);
 }
 
+// Shared by the demo and SDK; run() restores the caller's parent after completion.
+export function withParent(parentId, operation) {
+  const trace = currentTrace();
+  return context.run({ trace, parentId }, operation);
+}
+
 export function currentTrace() {
   const store = context.getStore();
   if (!store) throw new Error('CanaryLineage trace context is missing.');

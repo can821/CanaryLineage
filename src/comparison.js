@@ -15,18 +15,21 @@ function sink(event) {
   return null;
 }
 
-function sinks(trace) {
+function sinks(trace, label) {
   const result = new Map();
+  const selected = label === undefined ? null : new Set((trace.canaries ?? []).filter(c => c.label === label).map(c => c.id));
   for (const event of trace.events) {
+    if (selected && !event.canaryIds?.some(id => selected.has(id))) continue;
     const value = sink(event);
     if (value) result.set(value.id, value);
   }
   return result;
 }
 
-export function compareTraces(baseline, current) {
-  const before = sinks(baseline);
-  const after = sinks(current);
+export function compareTraces(baseline, current, { canaryLabel } = {}) {
+  if (canaryLabel !== undefined && (typeof canaryLabel !== 'string' || !canaryLabel || ![baseline, current].every(t => t.schemaVersion === 2 && t.canaries.some(c => c.label === canaryLabel)))) throw new Error('Canary label must exist in both schema-v2 traces');
+  const before = sinks(baseline, canaryLabel);
+  const after = sinks(current, canaryLabel);
   const sorted = values => [...values].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   return {
     baselineTraceId: baseline.id, currentTraceId: current.id,

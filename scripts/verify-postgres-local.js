@@ -1,7 +1,7 @@
 // Run in a normal local terminal. No installation, global config or memory fallback.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, writeFile, rm, access } from 'node:fs/promises';
+import { mkdtemp, writeFile, rm, access, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -59,7 +59,8 @@ try {
   try { await pool.query('SELECT 1'); } finally { await pool.end(); }
   console.log('PASS: real PostgreSQL connection.');
   stage = 'integration: schema, INSERT, HTTP, rollback and application-process restart';
-  const { stdout } = await exec(process.execPath, ['--test', 'test/integration/postgres.test.js'], {
+  const testFiles = (await readdir(new URL('../test/integration/', import.meta.url))).filter(name => name.endsWith('.test.js')).sort().map(name => `test/integration/${name}`);
+  const { stdout } = await exec(process.execPath, ['--test', ...testFiles], {
     cwd: new URL('..', import.meta.url), timeout: 60000,
     env: { ...process.env, TEST_DATABASE_URL: connectionString }, maxBuffer: 1024 * 1024,
   });
