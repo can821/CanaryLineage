@@ -25,10 +25,19 @@ export function postgresTraceStore(pool) {
   return {
     mode: 'postgres',
     async initialize() {
+      await pool.query('CREATE TABLE IF NOT EXISTS canary_sdk_segments (trace_id UUID NOT NULL, segment_id UUID NOT NULL, document JSONB NOT NULL, PRIMARY KEY (trace_id, segment_id))');
       await pool.query('CREATE TABLE IF NOT EXISTS canary_sdk_traces (id UUID PRIMARY KEY, document JSONB NOT NULL)');
     },
     async saveTrace(trace) {
+      if (trace.segmentId) {
+        await pool.query('INSERT INTO canary_sdk_segments (trace_id, segment_id, document) VALUES ($1, $2, $3::jsonb) ON CONFLICT (trace_id, segment_id) DO UPDATE SET document = EXCLUDED.document',[trace.id,trace.segmentId,JSON.stringify(trace)]);
+        return;
+      }
       await pool.query('INSERT INTO canary_sdk_traces (id, document) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO UPDATE SET document = EXCLUDED.document', [trace.id, JSON.stringify(trace)]);
+    },
+    async getSegments(id) {
+      const {rows}=await pool.query('SELECT document FROM canary_sdk_segments WHERE trace_id = $1 ORDER BY segment_id',[id]);
+      return rows.map(row=>row.document);
     },
     async getTrace(id) {
       const { rows } = await pool.query('SELECT document FROM canary_sdk_traces WHERE id = $1', [id]);

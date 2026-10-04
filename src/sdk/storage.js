@@ -5,9 +5,11 @@ export function memoryTraceStore({ limit = 500 } = {}) {
   return {
     mode: 'memory-demo',
     async saveTrace(trace) {
-      if (!traces.has(trace.id) && traces.size >= limit) throw new Error('Store full');
-      traces.set(trace.id, structuredClone(trace));
+      const key = trace.segmentId ? `${trace.id}/${trace.segmentId}` : trace.id;
+      if (!traces.has(key) && traces.size >= limit) throw new Error('Store full');
+      traces.set(key, structuredClone(trace));
     },
+    async getSegments(id) { return [...traces.values()].filter(t=>t.id===id).map(t=>structuredClone(t)); },
     async getTrace(id) { return structuredClone(traces.get(id) ?? null); },
   };
 }

@@ -6,8 +6,8 @@ import { AppError } from './errors.js';
 // run(), rather than enterWith(), keeps sibling requests and async branches isolated.
 const context = new AsyncLocalStorage();
 
-export function runWithTrace(trace, operation) {
-  return context.run({ trace, parentId: null }, operation);
+export function runWithTrace(trace, operation, parentId = null) {
+  return context.run({ trace, parentId }, operation);
 }
 
 // Shared by the demo and SDK; run() restores the caller's parent after completion.

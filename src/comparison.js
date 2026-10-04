@@ -27,7 +27,7 @@ function sinks(trace, label) {
 }
 
 export function compareTraces(baseline, current, { canaryLabel } = {}) {
-  if (canaryLabel !== undefined && (typeof canaryLabel !== 'string' || !canaryLabel || ![baseline, current].every(t => t.schemaVersion === 2 && t.canaries.some(c => c.label === canaryLabel)))) throw new Error('Canary label must exist in both schema-v2 traces');
+  if (canaryLabel !== undefined && (typeof canaryLabel !== 'string' || !canaryLabel || ![baseline, current].every(t => t.schemaVersion >= 2 && t.canaries.some(c => c.label === canaryLabel)))) throw new Error('Canary label must exist in both schema-v2 traces');
   const before = sinks(baseline, canaryLabel);
   const after = sinks(current, canaryLabel);
   const sorted = values => [...values].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
