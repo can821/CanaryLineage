@@ -137,6 +137,7 @@ export function createCanaryLineage({ serviceName, storage, failureMode = 'open'
         return encodePropagation({version:1,traceId:trace.id,segmentId:trace.segmentId,parentEventId:event.id,sourceService:serviceName,targetService,
           canaries:trace.canaries.filter(c=>needed.has(c.id)).map(({id,label,category,parentCanaryIds,operation,depth})=>({id,label,category,parentCanaryIds,operation,depth}))},budget.maxPropagationBytes);
       });
+      if (header && event) event.metadata.propagation = 'lineage-v1';
       try {
         const response=await fetch(endpoint,{method,body,headers:header?{[PROPAGATION_HEADER]:header}:{},signal:AbortSignal.timeout(timeoutMs),redirect:'error'});
         if(event){event.status=response.ok?'success':'failed';event.metadata.httpStatus=response.status;}

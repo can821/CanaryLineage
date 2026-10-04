@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    { "id": "no-new-destinations", "type": "NO_NEW_DESTINATIONS" },
+    { "id": "no-analytics", "type": "DENY_DESTINATIONS", "destinations": ["analytics"] },
+    { "id": "hash-email-before-http", "type": "REQUIRE_TRANSFORMATION", "label": "email-sha256", "operation": "sha256" }
+  ]
+}
