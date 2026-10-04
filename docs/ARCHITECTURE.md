@@ -25,7 +25,7 @@ Initial save: users row + pending lineage document in one transaction. `RETURNIN
 
 Final save: separate parameterized UPDATE sets the trace to completed/failed with all observations. Failure after successful storage does not alter that boundary's success. A finalization error produces a Trace store ERROR and a failure response, preserving evidence. `traceSaved` reports whether the exact final trace was written. Requests failing before initial persistence return response-only traces.
 
-No cross-system atomicity is claimed. A crash between initial and final saves leaves a pending trace. A COMMIT transport error is uncertain and labeled unconfirmed. HTTP failure/timeout cannot guarantee the receiver did not process a request. There are no automatic retries or idempotency promises. PostgreSQL integration and process-restart persistence passed in normal macOS Terminal, as reported by the owner on 1 October 2026. Work remains unable to start PostgreSQL because of its sandbox.
+No cross-system atomicity is claimed. A crash between initial and final saves leaves a pending trace. A COMMIT transport error is uncertain and labeled unconfirmed. HTTP failure/timeout cannot guarantee the receiver did not process a request. There are no automatic retries or idempotency promises. PostgreSQL integration and process-restart persistence passed in normal macOS Terminal, as reported by the owner on 1 October 2026. That run was blocked inside Work. On 4 October 2026 the agent independently ran the real integration successfully with elevated permission; see VERIFICATION.md.
 
 ## HTTP boundary
 

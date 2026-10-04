@@ -1,6 +1,6 @@
 # PostgreSQL'i normal Mac Terminali'nde doğrulama
 
-Durum: **PostgreSQL VERIFIED — kullanıcının normal macOS Terminali’nde bildirdiği başarılı gerçek doğrulama (1 Ekim 2026).** Work ortamının başlangıç kısıtı devam eder; başarılı yürütme Work tarafından yapılmadı.
+Durum: **PostgreSQL VERIFIED — kullanıcının normal macOS Terminali’nde bildirdiği başarılı gerçek doğrulama (1 Ekim 2026).** O başarılı yürütme Work tarafından yapılmadı. Güncelleme: 4 Ekim 2026 ajan, yükseltilmiş çalıştırma izniyle geçici gerçek PostgreSQL üzerinde hem eski hem SDK entegrasyonunu ayrıca başarıyla çalıştırdı.
 
 1 Ekim 2026: mevcut PostgreSQL 17.10 `initdb`, varsayılan ayarlarla ve tek bir `shared_memory_type=mmap` / `dynamic_shared_memory_type=mmap` denemesinde `shmget(... size=56 ...): Operation not permitted` hatası verdi. PostgreSQL sunucusu başlamadı. Docker/Homebrew PostgreSQL/Postgres.app ve standart 5432 portunda çalışan servis bulunmadı. Uygulamanın PostgreSQL adapter'ı bu nedenle değiştirilmedi.
 

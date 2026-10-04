@@ -143,7 +143,7 @@ Event: `id`, `parentId`, `sequence`, `type`, `location`, `value`, `occurredAt`, 
 | `GET /api/traces/:id` | Saved pending/completed/failed trace and readable tree |
 | `GET /api/compare?baseline=<UUID>&current=<UUID>` | Added, removed and unchanged logical destinations |
 
-Only `canary+<UUID v4>@example.test` is accepted. HTTP metadata records method, a fixed local destination, status, duration and a safe failure category. No authorization headers, passwords, raw response bodies or connection strings are recorded.
+The existing demo API accepts only `canary+<UUID v4>@example.test`; the SDK uses explicit synthetic string registration. HTTP metadata records method, a fixed local destination, status, duration and a safe failure category. No authorization headers, passwords, raw response bodies or connection strings are recorded.
 
 ## Checks and scripts
 
@@ -153,14 +153,15 @@ npm run test:postgres   # Real PostgreSQL integration, separate prerequisite
 npm run dev            # PostgreSQL mode; restart on source changes
 ```
 
-Tests exercise overlapping async requests, parent relationships, value isolation, real loopback HTTP, failure, timeout, finalization failure, SQL parameterization and rollback. The GitHub Actions workflow provisions PostgreSQL 17 and runs both groups after publication. [GitHub Actions passed on 2 October 2026](https://github.com/can821/CanaryLineage/actions/runs/36989343482), including both `npm run verify` and the real PostgreSQL integration test.
+Tests exercise overlapping async requests, parent relationships, value isolation, real loopback HTTP, failure, timeout, finalization failure, SQL parameterization and rollback. The GitHub Actions workflow provisions PostgreSQL 17 and runs both groups after publication. [GitHub Actions passed on 2 October 2026](https://github.com/can821/CanaryLineage/actions/runs/36989343482), including both `npm run verify` and the real PostgreSQL integration test for v0.1. This historical result does not verify the new v0.2 commits; their remote CI awaits an authenticated push.
 
-**PostgreSQL verification:** on 1 October 2026 the project owner reported a successful real `verify:postgres` run in normal macOS Terminal, including connection, schema, INSERT, HTTP, transactions and retrieval after the writer process exited. Work's sandbox could not start PostgreSQL and did not perform that successful run. See the [verification record](docs/VERIFICATION.md) for the evidence and its provenance.
+**PostgreSQL verification:** on 4 October 2026 this agent successfully ran both real PostgreSQL integration tests using the isolated temporary workflow with elevated execution permission. Earlier, on 1 October 2026 the project owner reported a successful real `verify:postgres` run in normal macOS Terminal, including connection, schema, INSERT, HTTP, transactions and retrieval after the writer process exited. Work's sandbox could not start PostgreSQL and did not perform that successful run. See the [verification record](docs/VERIFICATION.md) for the evidence and its provenance.
 
 ## Important files
 
 ```text
-src/app.js                    HTTP routes and finalization
+src/sdk/                      Multi-canary SDK, transformations, trace stores and PG reads
+src/app.js                    Demo HTTP routes and finalization
 src/instrumentation.js        Context, middleware and service/storage helpers
 src/tracker.js                Structured trace model and readable tree
 src/comparison.js             Deterministic destination-set comparison
@@ -180,7 +181,7 @@ test/                         Behavioral tests and PostgreSQL integration
 
 - V1 is a local developer tool; it is not production-ready security software.
 - No automatic discovery, static analysis, complete dynamic taint analysis, compliance guarantees, auth, or multi-framework support.
-- Exact synthetic value matching only; transformed/hashed values are not tracked.
+- Exact matching at observed boundaries. SDK derived values are tracked only through explicit `derive()` registration; arbitrary transformations are never inferred.
 - Async context does not cross worker/process boundaries automatically. Await instrumented work; fire-and-forget work is unsupported.
 - The mock shares the process but crosses a real HTTP socket boundary. It is not an independent deployed service.
 - Browser evidence is client-reported. Server observations say nothing about uninstrumented paths.
