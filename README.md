@@ -12,11 +12,22 @@ Built by **Can Yılmaz**.
 
 *Local memory-demo: the comparison below the trace shows an added mock HTTP destination. This screenshot does not demonstrate PostgreSQL persistence.*
 
-## v0.3.0: distributed lineage (advanced alpha)
+## v0.4.0: external validation, evidence explorer and authenticated context
 
-Explicit HTTP propagation across processes, delayed job context, semantic graphs, policies and a CLI are now available. Run `npm run demo:distributed` and `npm run check:regression` to see a real HTTP baseline pass and an added analytics destination fail. See [distributed usage and boundaries](docs/DISTRIBUTED.md).
+A controlled email used to reach only the archive service. A changed execution additionally sends its derived hash to analytics. CanaryLineage identifies the new distributed path and returns a policy failure suitable for CI:
 
-The browser console remains the v0.1 single-service demo. Distributed evidence is inspected through the CLI. PostgreSQL and delayed queue context are tested separately. No vendor broker, automatic discovery or OpenTelemetry integration is included. The package remains private.
+```text
+HTTP → service → explicit hash → storage → archive   PASS / exit 0
+                                        → analytics NEW PATH + NEW DESTINATION / FAIL / exit 1
+```
+
+This was verified after the fact against [pinned, independently developed JSON Server](docs/EXTERNAL-VALIDATION.md), without changing its source. Its storage is a real lowdb JSON file; PostgreSQL is separately integration-tested. The adapter explicitly adds hashing/outbound behavior. This is not production customer validation.
+
+Run `npm run demo:distributed` and `npm run check:regression`. Open `/explorer.html` in the local demo to import current/baseline bundles and policy JSON, filter canaries/services/destinations, and inspect graph paths, events and policy evidence. The UI and CLI use the same analysis core.
+
+Optional [HMAC propagation authentication and evidence quality](docs/TRUST.md) distinguish signed, unsigned and rejected context. [Distributed usage](docs/DISTRIBUTED.md) covers HTTP and generic delayed job context. Real vendor queues, OTel and signed bundles are not implemented. The package stays private; nothing is published to npm.
+
+**Maturity: advanced alpha with independent interoperability evidence.** Review [verification](docs/VERIFICATION.md) for actual environments and limitations.
 
 ## At a glance
 
@@ -27,7 +38,7 @@ The browser console remains the v0.1 single-service demo. Distributed evidence i
 
 **Stack:** JavaScript · Node.js · Express · PostgreSQL · plain HTML/CSS/JavaScript.
 
-**Scope:** package v0.3.0 advanced alpha; explicit instrumentation of selected boundaries. This is not whole-program discovery, full taint analysis, a privacy-compliance guarantee or production-ready security software.
+**Scope:** package v0.4.0 advanced alpha; explicit instrumentation of selected boundaries. This is not whole-program discovery, full taint analysis, a privacy-compliance guarantee or production-ready security software.
 
 For a short review, run the [demo](#quick-start), try the [destination comparison](#compare-destinations), then inspect the [architecture](docs/ARCHITECTURE.md) and [checks](#checks-and-scripts).
 

@@ -13,7 +13,7 @@ export function exportBundle(input){
     });
     return copy;
   });
-  const payload={schemaVersion:1,toolVersion:'0.3.0',createdAt:new Date().toISOString(),segments:safe};
+  const payload={schemaVersion:1,toolVersion:'0.4.0',createdAt:new Date().toISOString(),segments:safe};
   return {...payload,checksum:hash(payload)};
 }
 export function importBundle(bundle){

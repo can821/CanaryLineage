@@ -1,6 +1,8 @@
-# Distributed lineage v0.3 — advanced alpha
+# Distributed lineage v0.4 — advanced alpha
 
 ## Run
+
+Trace schemas 1/2/3 and bundle version 1 are supported; unknown versions are rejected. Propagation supports unsigned protocol 1 and optional signed envelope 2.
 
 Node >=22.9 is required (local verification uses Node 24).
 
@@ -31,10 +33,10 @@ Schema 3 uses random UUIDs for segments/events and propagates trace/canary IDs. 
 
 ## Trust and limits
 
-The version-1 `x-canary-lineage-context` header is bounded, validated base64url JSON containing identifiers and descriptors, not raw values. It is neither encrypted nor authenticated. Establish peer trust yourself; the application owns request bodies. Origin allowlists, disabled redirects, timeouts and graph/header/ancestry budgets are safeguards, not a security perimeter. Open mode marks rejected context incomplete while allowing host work; strict mode throws. Host network errors are preserved.
+The version-1 `x-canary-lineage-context` header is bounded, validated base64url JSON containing identifiers and descriptors, not raw values. Unsigned mode is neither encrypted nor authenticated; optional HMAC mode is documented in [TRUST.md](TRUST.md). Establish peer trust yourself; the application owns request bodies. Origin allowlists, disabled redirects, timeouts and graph/header/ancestry budgets are safeguards, not a security perimeter. Open mode marks rejected context incomplete while allowing host work; strict mode throws. Host network errors are preserved.
 
 Bundle SHA-256 checksums detect accidental corruption, not authorship. Raw values and unknown metadata are removed, but developer-supplied labels and allowed metadata must avoid secrets. Reordering serialized payload keys can invalidate the checksum.
 
 ## Limitations
 
-The web console remains the legacy single-service UI. No automatic taint tracking, OTel bridge, vendor queue, authenticated propagation, production load certification or npm release is claimed. Linux Node 22/24 with PostgreSQL 17 CI is configured; local success does not prove remote CI ran. Benchmarks are one local sequential run, include IPC overhead for distributed collection, exclude PostgreSQL, and report GC-sensitive parent heap deltas rather than total process memory.
+The `/explorer.html` UI imports distributed bundles and uses the CLI graph/diff/policy core. The original single-service console remains available. No automatic taint tracking, OTel bridge, vendor queue,  production load certification or npm release is claimed. Linux Node 22/24 with PostgreSQL 17 CI is configured; local success does not prove remote CI ran. Benchmarks are one local sequential run, include IPC overhead for distributed collection, exclude PostgreSQL, and report GC-sensitive parent heap deltas rather than total process memory.

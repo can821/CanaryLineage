@@ -1,6 +1,6 @@
 {
   "name": "canary-lineage",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Runtime synthetic-data lineage and destination comparison for explicitly instrumented Node.js applications.",
   "type": "module",
@@ -21,7 +21,9 @@
     "benchmark:sdk": "node scripts/benchmark-sdk.js",
     "demo:distributed": "node examples/distributed-demo.js",
     "benchmark:distributed": "node scripts/benchmark-distributed.js",
-    "check:regression": "node scripts/check-regression.js"
+    "check:regression": "node scripts/check-regression.js",
+    "benchmark:load": "node scripts/benchmark-load.js",
+    "validate:external": "node examples/external/json-server.js"
   },
   "dependencies": {
     "express": "^5.1.0",

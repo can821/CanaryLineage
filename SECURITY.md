@@ -11,3 +11,7 @@ This project is not a security scanner, malware sandbox, full taint engine or co
 ## Distributed alpha
 
 Propagation is explicit and unauthenticated. Accept only trusted peers. Bundle checksums detect corruption, not forgery. Application bodies and developer-supplied labels/metadata remain the caller's responsibility. See [distributed boundaries](docs/DISTRIBUTED.md).
+
+## v0.4 threat model
+
+Optional shared-key HMAC protects propagation integrity/authenticity, not confidentiality or service authorization. [TRUST.md](docs/TRUST.md) documents rotation, expiry, replay limitations and unsigned mode. Bundle checksums are not signatures; persisted trust is recorder-reported evidence, not independently authenticated provenance. Host code, configured keys, storage and bundle authors remain trusted. The local explorer renders metadata as text and bounds input size; it is not a hosted multi-user service. CanaryLineage is not a sandbox, DLP product, compliance product, sensitive-data discovery engine or security boundary.

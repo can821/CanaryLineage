@@ -1,8 +1,8 @@
 {
-  "production": 1017,
-  "tests": 962,
-  "ui": 318,
-  "demo_fixtures": 176,
-  "scripts": 166,
-  "total": 2639
+  "production": 1077,
+  "tests": 1037,
+  "ui": 369,
+  "demo_fixtures": 262,
+  "scripts": 191,
+  "total": 2936
 }

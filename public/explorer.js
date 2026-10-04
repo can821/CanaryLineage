@@ -30,7 +30,7 @@ $('analyze').addEventListener('click',async()=>{
     const [current,baseline,policy]=await Promise.all(['current','baseline','policy'].map(file));if(!current)throw Error('Choose a current trace or bundle.');
     const response=await fetch('/api/explorer/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({current,baseline,policy})});
     if(!response.ok)throw Error('Invalid or oversized trace, bundle or policy.');analysis=await response.json();
-    const {graph}=analysis;$('status').textContent=`${graph.traceId} · ${graph.complete?'COMPLETE supplied evidence':'INCOMPLETE evidence — no passing policy conclusion'} · ${graph.nodes.events.length} events · ${graph.evidence?.state??'trust not reported'}`;
+    const {graph}=analysis;$('status').textContent=`${graph.traceId} · ${graph.complete?'COMPLETE supplied evidence':'INCOMPLETE evidence — no passing policy conclusion'} · ${graph.nodes.events.length} events · ${graph.evidence?.state??'quality unknown'} · recorded trust: ${graph.evidence?.trust.join(', ')??'unknown'}`;
     $('status').className=graph.complete?'':'warning';
     options('canary',graph.nodes.canaries.map(c=>[c.id,`${c.label} · ${c.id.slice(0,8)}`]),'All canaries');options('service',graph.services.map(s=>[s,s]),'All services');options('destination',[...new Set(graph.nodes.destinations.map(d=>d.name))].map(s=>[s,s]),'All destinations');$('details').textContent='Select an event.';render();
   }catch(error){analysis=null;$('status').textContent=error.message;for(const id of ['services','hops','verdict','changes','timeline','details'])$(id).replaceChildren();}
