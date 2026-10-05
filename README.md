@@ -6,7 +6,7 @@ CanaryLineage is a local developer tool that follows a controlled synthetic valu
 
 Built by **Can Yılmaz**.
 
-[Portfolio](https://can-yilmaz.netlify.app/) · [LinkedIn](https://www.linkedin.com/in/can-yilmaz-200594381) · [Architecture](docs/ARCHITECTURE.md) · [Verification record](docs/VERIFICATION.md)
+· [LinkedIn](https://www.linkedin.com/in/can-yilmaz-200594381) · [Architecture](docs/ARCHITECTURE.md) · [Verification record](docs/VERIFICATION.md)
 
 ![CanaryLineage dark trace console with a synthetic storage trace and a comparison showing one added HTTP destination](docs/images/trace-console.png)
 
